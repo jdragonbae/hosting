@@ -4,23 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>alphabet.js — Test Harness (Safe RemoveLetters)</title>
-  <style>
-    body { font-family: Inter, Arial, sans-serif; margin:20px; }
-    .wrap { display:flex; gap:24px; align-items:flex-start; }
-    #alphabet-container { width:20px; height:300px; overflow-y:scroll; border:1px solid #ccc; padding:4px; }
-    .letter { height:20px; line-height:20px; text-align:center; font-weight:600; }
-    #controls { display:flex; gap:10px; margin-bottom:12px; }
-    button { padding:8px 12px; border-radius:6px; border:1px solid #888; background:#f6f6f6; cursor:pointer; }
-    #log { width:600px; height:300px; border:1px solid #ddd; padding:8px; white-space:pre-wrap; overflow:auto; background:#fafafa; }
-    h1 { margin:0 0 12px 0; }
-    .col { display:flex; flex-direction:column; gap:8px; }
-  </style>
 </head>
 <body>
-
   <div class="wrap">
     <div class="col">
       <div id="alphabet-container" aria-label="alphabet test container">
+        <!-- A~Z 직접 구성 -->
         <div class="letter">A</div>
         <div class="letter">B</div>
         <div class="letter">C</div>
@@ -49,6 +38,24 @@
         <div class="letter">Z</div>
       </div>
     </div>
+
+    <div class="col">
+      <h3>로그</h3>
+      <pre id="log">(콘솔 로그가 여기로 붙습니다)</pre>
+    </div>
   </div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    (function(){
+      const origLog = console.log.bind(console);
+      console.log = function(...args){
+        origLog(...args);
+        try{
+          logEl.textContent += args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ') + '\n';
+        }catch(e){}
+      }
+    })();
+  </script>
 </body>
 </html>
