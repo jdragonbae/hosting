@@ -8078,3 +8078,11 @@ function getHtmlImageInfo(obj) {
     console.log('cxfan return 3')
     return "success"
 }
+
+function abc() {
+  getHtmlImageInfo('PGRpdiBjbGFzcz0icW1sLXN0ZW0iIGRhdGEtY29weXJpZ2h0PSJ4a3cuY29tLTE3NTc5Mjc3NzMtMTAwMTQxNjM1NDEwODI3ODAwLVEzcUN6dlhyUFRVWV9LNVNLd2lhQWxQU3lEamhHS3Y5Y1R1YUpuMi1YQTd5dDM3MEFCbnRZbEo0MEYwNmVHdDYiPjxwIHN0eWxlPSIiPjxzcGFuPuS4gOS4quWltueJm+WcuuS5neaciOS7veWFseS6p+Wltjwvc3Bhbj48L3A+PC9kaXY+');
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    setTimeout(abc, 1000);
+});
