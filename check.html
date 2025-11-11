@@ -1,0 +1,54 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>checkbox</title>
+    <style>
+        .checkbox-container {
+            display: block;
+            text-align: center;
+        }
+        .checkbox {
+            border:none;
+            display: inline;
+            position: relative;
+            outline:none;
+            appearance:none;
+        }
+        .checkbox::before {
+            width: 15px;
+            height: 15px;
+            display:block;
+            position:absolute;
+            content:"";
+            box-sizing:border-box;
+            border-radius:50%;
+            top:0;
+            left:0;
+            border: 2px solid #ccc;
+        }
+        .checkbox:checked {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .label {
+            font-size: 16px;
+            color: #333;
+            margin-left:20px;
+        }
+        .sp {
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+<div class="checkbox-container">
+    <input type="checkbox" class="checkbox">
+    <label  class="label">
+        <span class="sp">155555555555555555555dfafafafafafaf</span>
+    </label>
+</div>
+</body>
+</html>
