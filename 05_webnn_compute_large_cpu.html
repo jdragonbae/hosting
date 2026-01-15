@@ -1,0 +1,79 @@
+<html>
+<body>
+  <h1>WebNN</h1>
+  <h3>WebNN Computation</h3>
+
+  <script type="module">
+(async () => {
+  // Check WebNN support
+  if (!navigator.ml) {
+    document.body.innerHTML += "<p>WebNN not enabled. Enable it in chrome://flags</p>";
+    return;
+  }
+
+  // 1. Select Device
+  let context;
+  try {
+    context = await navigator.ml.createContext({ deviceType: 'cpu' });
+    document.body.innerHTML += "<p>WebNN CPU selected</p>";
+  } catch (e) {
+    console.warn("GPU failed, trying CPU...", e);
+    try {
+      context = await navigator.ml.createContext({ deviceType: 'cpu' });
+      document.body.innerHTML += "<p>WebNN CPU selected</p>";
+    } catch (e2) {
+      document.body.innerHTML += "<p>Failed to create context: " + e2.message + "</p>";
+      return;
+    }
+  }
+
+  document.body.innerHTML += "<p>Starting Computation...</p>";
+
+  // --- CHANGED: Reduced size from 10000 to 1024 to prevent crash ---
+  const SIZE = 5000; 
+  
+  const builder = new MLGraphBuilder(context);
+  
+  // Descriptors
+  // 'input' is used for building the graph (needs shape/type)
+  // 'usage' is used for creating the tensor buffers (needs write/read access)
+  const desc = { dataType: 'float32', shape: [SIZE, SIZE] };
+  
+  // Step 1: Create Computational Graph
+  const a = builder.input('a', desc);
+  const b = builder.input('b', desc);
+  const c = builder.matmul(a, b);
+
+  // Step 2: Compile Graph
+  try {
+    const graph = await builder.build({ c });
+    
+    // Step 3: Create Tensors and Bind Data
+    // Note: usage flags (writable/readable) depend on your specific WebNN implementation version,
+    // but generally, input tensors need to be writable (by JS) and output readable.
+    const tensorA = await context.createTensor({ ...desc, writable: true });
+    const tensorB = await context.createTensor({ ...desc, writable: true });
+    const tensorC = await context.createTensor({ ...desc, readable: true });
+
+    // Fill data
+    context.writeTensor(tensorA, new Float32Array(SIZE * SIZE).fill(1.0));
+    context.writeTensor(tensorB, new Float32Array(SIZE * SIZE).fill(2.0));
+
+    // Execute
+    context.dispatch(graph, { a: tensorA, b: tensorB }, { c: tensorC });
+
+    // Read result
+    const results = await context.readTensor(tensorC);
+    const resultData = new Float32Array(results);
+    
+    document.body.innerHTML += `<p>Done! Matrix Size: ${SIZE}x${SIZE}</p>`;
+    document.body.innerHTML += `<p>Result C[0] = ${resultData[0]} (Should be ${SIZE * 2})</p>`;
+    
+  } catch (err) {
+    document.body.innerHTML += `<p style="color:red">Error: ${err.message}</p>`;
+    console.error(err);
+  }
+})();
+  </script>
+</body>
+</html>
