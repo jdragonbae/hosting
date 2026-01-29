@@ -1,0 +1,43 @@
+<canvas id=foo width=300 height=300></canvas>
+
+<script type="text/javascript"
+  src="https://unpkg.com/canvaskit-wasm@0.19.0/bin/canvaskit.js"></script>
+<script type="text/javascript">
+  const ckLoaded = CanvasKitInit({
+    locateFile: (file) => 'https://unpkg.com/canvaskit-wasm@0.19.0/bin/'+file});
+ckLoaded.then((CanvasKit) => {
+  const surface = CanvasKit.MakeCanvasSurface('foo');
+
+  const paint = new CanvasKit.Paint();
+  paint.setColor(CanvasKit.Color4f(0.9, 0, 0, 1.0));
+  paint.setStyle(CanvasKit.PaintStyle.Stroke);
+  paint.setAntiAlias(true);
+  // const rr = CanvasKit.RRectXY(CanvasKit.LTRBRect(10, 60, 210, 260), 25, 15);
+  const w = 100; // size of rect
+  const h = 60;
+  let x = 10; // initial position of top left corner.
+  let y = 60;
+  let dirX = 1; // box is always moving at a constant speed in one of the four diagonal directions
+  let dirY = 1;
+
+  function drawFrame(canvas) {
+    // boundary check
+    if (x < 0 || x+w > 300) {
+      dirX *= -1; // reverse x direction when hitting side walls
+    }
+    if (y < 0 || y+h > 300) {
+      dirY *= -1; // reverse y direction when hitting top and bottom walls
+    }
+    // move
+    x += dirX;
+    y += dirY;
+
+    canvas.clear(CanvasKit.YELLOW);
+    const rr = CanvasKit.RRectXY(CanvasKit.LTRBRect(x, y, x+w, y+h), 25, 15);
+    canvas.drawRRect(rr, paint);
+    surface.requestAnimationFrame(drawFrame);
+  }
+  surface.requestAnimationFrame(drawFrame);
+});
+
+</script>
