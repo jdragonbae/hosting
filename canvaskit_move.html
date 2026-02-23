@@ -6,10 +6,16 @@
   const ckLoaded = CanvasKitInit({
     locateFile: (file) => 'https://unpkg.com/canvaskit-wasm@0.19.0/bin/'+file});
 ckLoaded.then((CanvasKit) => {
-  const surface = CanvasKit.MakeCanvasSurface('foo');
+const surface = CanvasKit.MakeCanvasSurface('foo');
+
+  const paint = new CanvasKit.Paint();
+  paint.setColor(CanvasKit.Color4f(0.0, 0.0, 1.0, 1.0));
+
+  const rect = CanvasKit.LTRBRect(50, 50, 200, 200);
 
   function draw(canvas) {
-    canvas.clear(CanvasKit.Color4f(1.0, 0.0, 0.0, 1.0));
+    canvas.clear(CanvasKit.GREY);
+    canvas.drawRect(rect, paint);
   }
   
   surface.drawOnce(draw);
