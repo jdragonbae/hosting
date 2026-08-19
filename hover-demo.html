@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pointer Type Debug</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; padding: 24px; background: #fff; }
+  h2 { font-size: 16px; margin-bottom: 12px; }
+  .links { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+  .link {
+    display: inline-block; width: fit-content;
+    color: #0284c7; font-size: 20px; padding: 12px 20px;
+    border: 2px solid #bae6fd; border-radius: 8px; text-decoration: none;
+  }
+  .link:hover { background: #e0f2fe; border-color: #0284c7; }
+  #dwell { font-size: 15px; margin-bottom: 12px; color: #334155; }
+  #log {
+    font: 12px/1.5 monospace; background: #0f172a; color: #e2e8f0;
+    padding: 12px; border-radius: 8px; height: 45vh; overflow-y: auto;
+    white-space: pre-wrap; word-break: break-all;
+  }
+  .m { color: #4ade80; } .t { color: #f87171; } .p { color: #facc15; }
+</style>
+</head>
+<body>
+  <h2>Move the cursor over a link (do NOT click) — events appear below</h2>
+  <div class="links">
+    <a class="link" href="https://example.com/page-a">Anchor A (example.com)</a>
+    <a class="link" href="https://example.org/page-b">Anchor B (example.org)</a>
+  </div>
+  <div id="dwell">hover dwell: <b>0</b> ms</div>
+  <div id="log"></div>
+<script>
+  const log = document.getElementById('log');
+  const dwellEl = document.querySelector('#dwell b');
+  let hoverStart = null, dwellTimer = null;
+
+  function add(msg, cls) {
+    const t = (performance.now() / 1000).toFixed(3);
+    const line = document.createElement('div');
+    line.innerHTML = `[${t}] <span class="${cls || ''}">${msg}</span>`;
+    log.prepend(line);
+    while (log.childElementCount > 200) log.lastChild.remove();
+  }
+
+  function cls(pt) { return pt === 'mouse' ? 'm' : pt === 'touch' ? 't' : 'p'; }
+
+  // Pointer events: pointerType tells the truth about the input source.
+  for (const ev of ['pointerover', 'pointerout', 'pointerdown', 'pointerup']) {
+    document.addEventListener(ev, e => {
+      const target = e.target.closest('a') ? `→ ${e.target.textContent.trim()}` : '';
+      add(`${ev}  pointerType=${e.pointerType || '(empty)'}  buttons=${e.buttons} ${target}`,
+          cls(e.pointerType));
+    }, true);
+  }
+  // Raw mouse/touch events (mousemove is sampled to avoid flooding).
+  let lastMove = 0;
+  document.addEventListener('mousemove', e => {
+    const now = performance.now();
+    if (now - lastMove > 500) { lastMove = now; add(`mousemove (sampled)  buttons=${e.buttons}`, 'm'); }
+  }, true);
+  for (const ev of ['touchstart', 'touchend']) {
+    document.addEventListener(ev, () => add(ev, 't'), true);
+  }
+
+  // Anchor hover dwell: same concept the ML model sees at runtime.
+  for (const a of document.querySelectorAll('a')) {
+    a.addEventListener('pointerover', () => {
+      hoverStart = performance.now();
+      clearInterval(dwellTimer);
+      dwellTimer = setInterval(() => {
+        dwellEl.textContent = Math.round(performance.now() - hoverStart);
+      }, 50);
+    });
+    a.addEventListener('pointerout', () => {
+      clearInterval(dwellTimer);
+      add(`hover ended: dwell=${Math.round(performance.now() - hoverStart)}ms`, 'p');
+    });
+    a.addEventListener('click', e => e.preventDefault());
+  }
+  add('ready — move the cursor over a link');
+</script>
+</body>
+</html>

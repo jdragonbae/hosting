@@ -1,0 +1,16 @@
+[Adblock Plus 2.0]
+! Checksum: pDsLuKeqfZI+IF7roNKe6Q
+! Version: 202107221621
+! Title: Hello
+! Last modified: 22 Jul 2021 16:21 UTC
+!
+! Please report any unblocked adverts or problems
+! in the forums (https://forums.lanik.us/)
+! or via e-mail (easylist@protonmail.com).
+!
+!-----------------------General advert blocking filters-----------------------!
+! *** easylist:easylist/easylist_general_block.txt ***
+&ad.vid=$~xmlhttprequest
+&ad_block=
+&ad_box_
+&ad_classid=

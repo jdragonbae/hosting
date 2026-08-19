@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ArkWeb canvas GL retention repro</title>
+<style>
+  body { margin: 0; font-family: sans-serif; background: #888; }
+  #hud { position: fixed; top: 0; left: 0; right: 0; z-index: 9;
+         background: rgba(0,0,0,.85); color: #0f0; font: 13px monospace;
+         padding: 6px 10px; white-space: pre-line; }
+  #pages { padding-top: 70px; }
+  canvas { display: block; margin: 8px auto; background: #fff;
+           box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+</style>
+</head>
+<body>
+<div id="hud">booting…</div>
+<div id="pages"></div>
+<script>
+// Faithful mimic of GitCode's vscode-pdf-viewer media/editor.js:
+//  - 45 "pages" (US Letter 612x792pt) rendered eagerly into canvases
+//  - canvas backing = css size * devicePixelRatio, scale = clamp(container/612, 1.0, 1.5)
+//  - on every resize (debounced 250ms): remove all canvases from DOM, create 45 new ones
+//  - async "render tasks" keep painting into canvases after detach (never cancelled),
+//    like uncancelled pdf.js RenderTasks holding the 2D context
+const NUM_PAGES = 45;
+const PAGE_W = 612, PAGE_H = 792;
+let generation = 0;
+let liveTasks = 0;
+let totalAllocatedMB = 0;
+
+function renderAllPages() {
+  const container = document.getElementById('pages');
+  while (container.firstChild) container.removeChild(container.firstChild);
+  generation++;
+  const containerWidth = container.clientWidth - 40;
+  const scale = Math.max(1.0, Math.min(containerWidth / PAGE_W, 1.5));
+  const dpr = window.devicePixelRatio || 1;
+  let genMB = 0;
+  for (let p = 1; p <= NUM_PAGES; p++) {
+    const canvas = document.createElement('canvas');
+    container.appendChild(canvas);
+    const cssW = Math.floor(PAGE_W * scale), cssH = Math.floor(PAGE_H * scale);
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+    canvas.width = Math.ceil(cssW * dpr);
+    canvas.height = Math.ceil(cssH * dpr);
+    genMB += canvas.width * canvas.height * 4 / 1048576;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(dpr, dpr);
+    paintPageAsync(ctx, p, generation, cssW, cssH);
+  }
+  totalAllocatedMB += genMB;
+  updateHud(scale, dpr, genMB);
+}
+
+// paint in chunks over ~2s so "render tasks" outlive a quick resize, like pdf.js
+function paintPageAsync(ctx, pageNo, gen, w, h) {
+  liveTasks++;
+  let step = 0;
+  (function chunk() {
+    if (step >= 20) { liveTasks--; updateHud(); return; }
+    ctx.fillStyle = `hsl(${(pageNo * 24) % 360}, 60%, ${85 - step * 2}%)`;
+    ctx.fillRect(20, 30 + step * (h - 60) / 20, w - 40, (h - 60) / 20 - 4);
+    ctx.fillStyle = '#222';
+    ctx.font = '16px sans-serif';
+    ctx.fillText(`gen ${gen}  page ${pageNo}  line ${step}`, 30, 46 + step * (h - 60) / 20);
+    step++;
+    setTimeout(chunk, 100);  // continues into detached canvases after re-render
+  })();
+}
+
+function updateHud(scale, dpr, genMB) {
+  const c = document.querySelectorAll('canvas');
+  const first = c[0];
+  document.getElementById('hud').textContent =
+    `gen=${generation}  canvases(DOM)=${c.length}  liveRenderTasks=${liveTasks}\n` +
+    (first ? `backing=${first.width}x${first.height}px  viewport=${innerWidth}x${innerHeight}  dpr=${(window.devicePixelRatio).toFixed(3)}\n` : '') +
+    `thisGen=${genMB ? genMB.toFixed(0) : '?'}MB  cumulativeAllocated=${totalAllocatedMB.toFixed(0)}MB`;
+}
+
+function debounce(fn, wait) {
+  let t;
+  return function () { clearTimeout(t); t = setTimeout(fn, wait); };
+}
+
+window.addEventListener('resize', debounce(renderAllPages, 250));
+renderAllPages();
+</script>
+</body>
+</html>
